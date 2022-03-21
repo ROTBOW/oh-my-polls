@@ -1,5 +1,6 @@
 import datetime
 from urllib import response
+from venv import create
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
@@ -65,3 +66,27 @@ class QuestionIndexViewTest(TestCase):
         response = self.client.get(reverse('polls:index'))
         self.assertContains(response, 'No polls are available')
         self.assertQuerysetEqual(response.context['latest_question_list'], [])
+
+    def test_future_and_past_questions(self):
+        '''
+        Even if both past and future questions exist, only past puestions are displayed.
+        '''
+        question = create_question('Past question.', -30)
+        create_question('Future question', 30)
+        response = self.client.get(reverse('polls:index'))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            [question]
+        )
+
+    def test_two_past_questions(self):
+        '''
+        The questions index page may display multiple questions.
+        '''
+        q1 = create_question('past q 1', -30)
+        q2 = create_question('past q 2', -5)
+        response = self.client.get(reverse('polls:index'))
+        self.assertQuerysetEqual(
+            response.context['latest_questions_list'],
+            [q2, q1]
+        )
